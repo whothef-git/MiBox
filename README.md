@@ -1,16 +1,22 @@
-# Octahedron v3
+# Octahedron v3.0
 
 A calm, widget-first Android TV launcher with a living sky, local and world clocks, official JAKIM prayer times, Arabic Quran verses with Malay translation, expanded weather forecasts and integrated smart-home controls. Built on WidgeTV and customized for Sony BRAVIA.
 
 Use the TV remote to move between **Home**, **Prayer Time**, **Weather** and **Smart Home**. Screen-tab navigation wraps from the last tab to the first and back.
 
-*Screenshots below were captured on Sony BRAVIA running Octahedron v3.0 (version code 13) on 30–31 October 2026. Prayer Time shows the current Quran-card preview; device states, forecasts and content reflect the capture time.*
+**Current version:** v3.0 (`versionCode 13`). Updated 1 November 2026 for main commit `4b649e3`, including the approved Weather and gold tab-focus updates through PR #15.
+
+*All four previews below are short animated GIFs recorded directly on Sony BRAVIA on 1 November 2026 from the installed, optimized build matching that source. The 1920 × 1080 recordings are encoded at 960 × 540 and 15fps for the README. Clocks, Quran content, forecasts and device states reflect capture time; no device control commands were sent. Original-resolution stills and recording details are available in [capture details](docs/screenshots/README.md).*
 
 ## What's new in v3
 
 - **Living sky:** a subtle clear-sky tint, translucent sun and moon, soft halos and horizon fades over the original geometric wallpaper. Time-specific moon illumination and waxing/waning orientation come from USNO, refreshed every fifteen minutes while visible.
+- **Textured sun and moon:** circular sun and moon artwork at 50% opacity, a restrained 15% sky tint, and a small moon-phase label. The moon is hidden when valid current phase data is unavailable.
+- **Smooth clocks:** small local seconds alternate upward and downward as they change, with fixed digit positions to prevent clock shaking. The Saudi clock retains hours/minutes and uses the same alternating motion on minute changes.
 - **Quran verses by prayer time:** Arabic and original Malay translation from Mengaji.my, changing at each of the five official JAKIM prayer times. Text automatically fits the available space; no verse collection is bundled.
-- **Expanded Weather screen:** current temperature, feels-like temperature, humidity and wind, up to eight upcoming hourly forecasts and a five-day outlook.
+- **Updated Weather screen:** Sunrise, Sunset and Next Rain replace the current-condition metric boxes. Eight upcoming hours show larger condition icons, temperature, rain chance and precipitation in millimetres, above a five-day outlook. Weather refreshes every ten minutes while the launcher is open.
+- **Moving rain and splashes:** layered drifting clouds, varied falling droplets and brief bottom-edge impact splashes respond to the current rain condition. Hourly rain probability does not activate rain animation.
+- **Clearer tab focus:** focused tab text and its short underline fade to the Islamic calendar's gold (`#D8B46A`), with a smooth 220ms transition and a measured 25px text-to-underline gap on the target TV. No pill background is used.
 - **Dynamic ambient app lighting:** the focused app's colors illuminate the dock with smooth focus transitions.
 - **Faster GO DAIKIN controls:** immediate optimistic display updates, debounced target dispatch and protection against background polling overwriting in-flight settings.
 - **Controls for every online AC:** power, temperature, fan and operating-mode controls are available across registered online GO DAIKIN units, with consistent Online/Offline presence alongside Tapo and Kasa devices.
@@ -20,19 +26,27 @@ Use the TV remote to move between **Home**, **Prayer Time**, **Weather** and **S
 
 ### Home
 
-![Home screen with local and Saudi clocks, Malay Hijri date, living sky and ambient app dock](docs/screenshots/octahedron-home.png)
+![Animated Home screen with local and Saudi clocks, Malay Hijri date, living sky and ambient app dock](docs/screenshots/octahedron-home.gif)
 
-Local and secondary-city clocks, Gregorian and Malay Hijri dates, weather summaries, system shortcuts and an app dock sit over a geometric sky background. Choose four dock apps and open the remaining apps from the grid. Inputs, Wi-Fi and Settings remain accessible from the remote.
+Local and secondary-city clocks, Gregorian and Malay Hijri dates, weather summaries, system shortcuts and an app dock sit over a geometric sky background. The configured dock apps appear in a row, with remaining apps available from the grid. Inputs, Wi-Fi and Settings remain accessible from the remote.
+
+The local clock includes smaller seconds with alternating up/down transitions. The Saudi clock keeps its hours/minutes format. Moving up from the dock highlights the focused screen tab with gold text and underline; moving back down fades the gold away while the active-screen underline remains.
 
 The living sky preserves the existing wallpaper and layout. The sun follows configured local sunrise and sunset timing. The moon moves along a decorative night arc; its position is an ambient illustration, not an astronomical altitude or moonrise prediction. Its illuminated fraction and phase orientation use an official USNO response for the current UTC date and time, refreshed in fifteen-minute intervals.
 
 Recent moon data is cached privately for up to thirty minutes. If a fresh value is unavailable, the moon is omitted until it loads; the sun and wallpaper continue working offline. Position updates run while the launcher is visible and stop when paused. See [living-sky behavior and checks](docs/living-sky.md).
 
+**Earlier sky timelapse — accelerated demonstration**
+
+![Earlier TV timelapse showing the textured Moon and Sun moving along the ambient sky arcs](docs/screenshots/octahedron-sky-timelapse.gif)
+
+Recorded on the Sony TV on 31 October 2026 during the approved textured-sky preview. This GIF condenses the saved recording of about 105 seconds to about 18 seconds. Only celestial travel was accelerated in that preview; the clock was not advanced, and it does not demonstrate lunar phases changing over a single night. It predates the latest clock-seconds, moon-label and gold-tab updates; the four card GIFs show the current UI. The temporary timelapse hook was removed from the normal launcher.
+
 ### Prayer Time
 
-![Prayer Time screen with official JAKIM SGR01 times and an Arabic Quran verse with Malay translation](docs/screenshots/octahedron-prayer-time.png)
+![Animated Prayer Time screen with official JAKIM SGR01 times and an Arabic Quran verse with Malay translation](docs/screenshots/octahedron-prayer-time.gif)
 
-A full-width, read-only **official JAKIM SGR01 prayer timeline** accompanies **HADITH OF THE DAY**. Prayer schedules are cached and refreshed; unavailable official data is not replaced with calculated times.
+A full-width, read-only **official JAKIM SGR01 prayer timeline** accompanies **AL QURAN VERSE OF THE DAY**. Prayer schedules are cached and refreshed; unavailable official data is not replaced with calculated times.
 
 The **AL QURAN VERSE OF THE DAY** card displays original Arabic and Malay translation from [Mengaji.my](https://www.mengaji.my/api-docs/), whose translation is based on Tafsir Pimpinan Ar-Rahman by Sheikh Abdullah Basmeih. Arabic uses the official KFGQPC Hafs Uthmanic font, followed by a blank line and the Malay translation in Alexandria. The surah/ayah reference sits directly below the translation; the provider footer is hidden. Native auto-sizing preserves all wording without ellipsis or scrolling; very long verses use smaller text. The dock and app grid remain hidden.
 
@@ -40,20 +54,24 @@ The verse changes at Subuh, Zohor, Asar, Maghrib and Isyak using official JAKIM 
 
 ### Weather
 
-![Weather screen with current conditions, eight hourly forecasts and a five-day outlook](docs/screenshots/octahedron-weather.png)
+![Animated Weather screen with falling rain, bottom splashes, eight hourly forecasts and a five-day outlook](docs/screenshots/octahedron-weather.gif)
 
 The expanded screen uses [Open-Meteo](https://open-meteo.com/) for:
 
-- Current conditions, feels-like temperature, humidity and wind speed.
-- Up to eight upcoming hourly forecasts with temperature, condition icons, rain probability, humidity and wind.
+- Current temperature, condition and today's high/low, with Sunrise, Sunset and Next Rain boxes.
+- Up to eight upcoming hourly forecasts with temperature, larger condition icons, rain probability and forecast precipitation in millimetres. Feels-like, humidity and wind rows are removed.
 - A five-day outlook with daily high/low temperatures and rain probability.
 - An update timestamp and saved-forecast labeling when cached data is shown after a refresh failure.
 
-Condition-driven weather atmosphere remains separate from the living-sky overlay. Rain effects depend on current conditions, not forecast precipitation probability. Weather summaries for the local and secondary cities remain in the header. No Open-Meteo API key is required.
+Weather refreshes when the saved reading is at least ten minutes old, checked on resume and each minute while the launcher is visible. On failure, saved data is labelled; readings older than three hours are hidden. More frequent fetching does not make the provider's model output a direct observation at the house.
+
+Next Rain scans the next 24 hours for forecast precipitation with a rainy condition code. It shows **Now** for currently reported rain, an approximate hourly time otherwise, **None 24h** for a complete dry window, or a dash when data is unavailable. It is an estimate, not a minute-by-minute rain-onset alert. Sunrise and Sunset come from the same daily weather feed.
+
+Condition-driven weather atmosphere remains separate from the living-sky overlay. Falling rain, drifting clouds and bottom-edge splashes depend on current conditions, not forecast precipitation probability, and stop outside Weather. The app dock stays hidden to leave room for the five-day strip. Weather summaries for the local and secondary cities remain in the header. No Open-Meteo API key is required. See [rain behavior and TV checks](docs/weather-rain.md).
 
 ### Smart Home
 
-![Smart Home screen with five Daikin air conditioners, two Tapo plugs and one Kasa power-strip card](docs/screenshots/octahedron-smart-home.png)
+![Animated Smart Home screen with five Daikin air conditioners, two Tapo plugs and one Kasa power-strip card](docs/screenshots/octahedron-smart-home.gif)
 
 The integrated grid combines **GO DAIKIN air conditioners**, **Tapo P110 plugs** and a **Kasa KP303 three-outlet power strip**. Device controls open in floating dialogs, with remote focus returning to the grid when dismissed.
 
@@ -91,7 +109,9 @@ Release builds enable R8 and resource shrinking. The current release variant use
 
 ## Validation
 
-Cloud development validation of the current source completed debug, optimized release and instrumentation-test APK builds. The four existing host suites passed **304 synthetic checks**: 70 TP-Link protocol/state, 75 GO DAIKIN cloud, 75 temperature-control and 84 fan/mode/control checks. These do not communicate with real devices or establish that the newer launcher UI and fast-control behavior work on hardware.
+The latest Weather work completed debug, optimized release and instrumentation-test APK builds, with **45 WeatherRainChecks passing on the Sony TV** using weather fixtures. They cover rain classification, movement, bottom splashes, sunrise/sunset parsing, next-rain timing and decimal precipitation amounts. The final gold tab-focus build also compiled successfully and was installed and visually checked on the TV; its exact gold and 25px gap were measured from screenshots. Documentation captures on 1 November did not rerun those suites or exercise smart-device controls.
+
+Earlier validation includes **14 ClockHeaderChecks**, **43 LivingSkyChecks** and **34 PrayerVerseChecks** on the Sony TV. The four existing host suites previously passed **304 synthetic checks**: 70 TP-Link protocol/state, 75 GO DAIKIN cloud, 75 temperature-control and 84 fan/mode/control checks. These host checks do not communicate with real devices or establish that every smart-device control works on hardware.
 
 Host-test instructions are in [protocol-tests](launcher/protocol-tests/README.md) and the [GO DAIKIN proof of concept](launcher/godaikin-poc/README.md). They use Java 17 and the test-only `org.json:json:20240303` parser, which is not an APK dependency.
 
@@ -101,6 +121,8 @@ Android checks require an authorized test TV or compatible Android device. The d
 # Run from launcher/. Build each test APK separately for its selected runner.
 bash ./gradlew :app:assembleDebugAndroidTest -PtestRunner=tv.widgetv.home.PrayerVerseChecks
 bash ./gradlew :app:assembleDebugAndroidTest -PtestRunner=tv.widgetv.home.LivingSkyChecks
+bash ./gradlew :app:assembleDebugAndroidTest -PtestRunner=tv.widgetv.home.WeatherRainChecks
+bash ./gradlew :app:assembleDebugAndroidTest -PtestRunner=tv.widgetv.home.ClockHeaderChecks
 ```
 
 After installing the debug app and the matching test APK on an authorized device, invoke the selected runner, for example:
