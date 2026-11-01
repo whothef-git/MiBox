@@ -79,15 +79,16 @@ public final class TemperatureTestActivity extends Activity {
         catch(Exception e){return "Write blocked: "+TemperatureValidation.safeFailure(e)+". A cached payload preview may be prepared; a write still requires fresh unchanged original state after confirmation.";}}
     private void ensureSession()throws Exception{
         if(cloud!=null&&validation!=null)return;
+        JSONObject binding=vault.loadControl("binding");String pinned=binding==null?null:binding.optString("id","");
+        if(pinned==null||pinned.trim().isEmpty())throw new GoDaikinCloudClient.CloudException(GoDaikinCloudClient.Failure.TARGET_MISMATCH);
         CloudCredentialVault.Account account=vault.load();if(account==null)throw new GoDaikinCloudClient.CloudException(GoDaikinCloudClient.Failure.CREDENTIALS_REQUIRED);
         gate=new TemperatureCommandGate();cloud=new GoDaikinCloudClient(new CloudHttpsTransport(gate),SystemClock::elapsedRealtime);
         try{
             cloud.authenticate(account.user,account.password);List<GoDaikinCloudClient.DeviceStatus> devices=cloud.readRegisteredDevices().devices;
-            JSONObject binding=vault.loadControl("binding");String pinned=binding==null?null:binding.getString("id");
             List<GoDaikinCloudClient.DeviceStatus> candidates=new ArrayList<>();
             for(GoDaikinCloudClient.DeviceStatus d:devices){
-                // Bootstrap uses BOTH the previously verified name/IP and firmware. Subsequent sessions use ONLY the pinned stable ID.
-                if(pinned!=null?pinned.equals(d.id):"TV".equalsIgnoreCase(d.name)&&"192.168.50.93".equals(d.ip)&&"V1.2.5".equals(d.firmware))candidates.add(d);
+                // This historical test requires an existing private binding; never guess a target from name, IP or firmware.
+                if(pinned.equals(d.id))candidates.add(d);
             }
             if(candidates.size()!=1)throw new GoDaikinCloudClient.CloudException(GoDaikinCloudClient.Failure.TARGET_MISMATCH);
             target=candidates.get(0);gate.bind(target.id);
