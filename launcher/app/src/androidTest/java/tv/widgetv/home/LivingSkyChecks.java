@@ -63,6 +63,28 @@ public final class LivingSkyChecks extends Instrumentation {
             check(Math.abs(Color.red(sky)-11)<40&&Math.abs(Color.green(sky)-25)<40,"sky tint stays faint");
             image.eraseColor(0xFF0B192D);renderer.draw(canvas,1920,1080,25*3_600_000L,rise,set,waning);
             check(Color.red(image.getPixel(965,430))>40,"calendar moon renders on night arc");
+            image.eraseColor(0xFF0B192D);renderer.draw(canvas,1920,1080,25*3_600_000L,rise,set,null);
+            int outside=image.getPixel(915,430);
+            image.eraseColor(0xFF0B192D);renderer.draw(canvas,1920,1080,25*3_600_000L,rise,set,MoonCalendar.parse(fixture(today,"Last Quarter","50%"),today));
+            check(image.getPixel(915,430)==outside,"surface lighting draws no outside halo or ring");
+            check(Color.red(image.getPixel(945,430))>Color.red(image.getPixel(1005,430))*3,"unlit hemisphere remains dark");
+            int darkest=255,brightest=0;
+            for(int y=415;y<445;y++)for(int x=940;x<965;x++){int value=Color.red(image.getPixel(x,y));darkest=Math.min(darkest,value);brightest=Math.max(brightest,value);}
+            check(brightest>65,"illuminated surface contains bright crater detail at unchanged opacity");
+            check(brightest-darkest>8,"surface preserves texture variation instead of a flat white fill");
+            check(LivingSky.CELESTIAL_ALPHA==128&&LivingSky.SKY_ALPHA==38,"moon opacity and wallpaper tint unchanged");
+            LunarSurface lunar=new LunarSurface(context);
+            check(lunar.available(),"bundled NASA color and elevation assets load");
+            Bitmap detailed=lunar.phase(.51f,false);
+            check(detailed.getWidth()==384&&detailed.getHeight()==384,"higher-resolution lunar render cache");
+            check(Color.alpha(detailed.getPixel(0,0))==0,"lunar projection has transparent corners");
+            check(Color.red(detailed.getPixel(96,192))>Color.red(detailed.getPixel(288,192)),"waning material lights the left hemisphere");
+            try(java.io.OutputStream export=context.openFileOutput("preview-lunar-last-quarter.png",Context.MODE_PRIVATE)){detailed.compress(Bitmap.CompressFormat.PNG,100,export);}
+            Bitmap cached=lunar.phase(.51f,false);check(cached==detailed,"unchanged phase reuses its bitmap");
+            Bitmap full=lunar.phase(1,true);int minimum=255,maximum=0;
+            for(int y=80;y<300;y++)for(int x=80;x<300;x++){int r=Color.red(full.getPixel(x,y));minimum=Math.min(minimum,r);maximum=Math.max(maximum,r);}
+            check(maximum-minimum>40,"NASA maria and highlands retain strong surface variation");
+            try(java.io.OutputStream export=context.openFileOutput("preview-lunar-full-moon.png",Context.MODE_PRIVATE)){full.compress(Bitmap.CompressFormat.PNG,100,export);}
             image.recycle();
             long now=System.currentTimeMillis(),at=MoonCalendar.bucket(now);
             provider=new MoonCalendar(context);String url=provider.url(now);

@@ -19,23 +19,19 @@ final class LivingSky {
     private final Paint paint=new Paint(Paint.ANTI_ALIAS_FLAG);
     private final Paint phaseLabel=new Paint(Paint.ANTI_ALIAS_FLAG);
     private final Rect labelBounds=new Rect();
-    private final Bitmap texture=Bitmap.createBitmap(160,160,Bitmap.Config.ARGB_8888);
-    private final Bitmap moon=Bitmap.createBitmap(160,160,Bitmap.Config.ARGB_8888);
-    private float lastIllumination=-1;
-    private boolean lastWaxing;
+    private final LunarSurface lunar;
     private int lastTint=-1;
     private Shader tint;
     static final float MOON_DIAMETER=90, SUN_DIAMETER=92;
     private final Bitmap solar;
     private final Shader sunHalo=new RadialGradient(0,0,190,new int[]{0x1CFFE0A0,0x00FFE0A0},null,Shader.TileMode.CLAMP);
-    private final Shader moonHalo=new RadialGradient(0,0,200,new int[]{0x1397B5DA,0x0097B5DA},null,Shader.TileMode.CLAMP);
     LivingSky(Context context){
         paint.setFilterBitmap(true);
         phaseLabel.setTypeface(Typeface.create(context.getResources().getFont(R.font.outfit),400,false));
         phaseLabel.setTextSize(14);
         phaseLabel.setTextAlign(Paint.Align.CENTER);
         phaseLabel.setColor(0xFFA5B4CA);
-        loadDisc(context,R.drawable.lunar_surface,texture,.03f,.97f);
+        lunar=new LunarSurface(context);
         solar=Bitmap.createBitmap(160,160,Bitmap.Config.ARGB_8888);
         loadDisc(context,R.drawable.solar_surface,solar,.063f,.937f);
     }
@@ -58,21 +54,7 @@ final class LivingSky {
     /** Signed terminator in a unit disc: waxing illuminates the right side, waning the left. */
     static float terminator(float illuminated,boolean waxing){return (waxing?1:-1)*(1-2*illuminated);}
     private void phase(MoonCalendar.Entry entry){
-        if(lastIllumination==entry.illuminated&&lastWaxing==entry.waxing)return;
-        lastIllumination=entry.illuminated;lastWaxing=entry.waxing;
-        int[] pixels=new int[160*160];texture.getPixels(pixels,0,160,0,0,160,160);
-        float lightZ=2*entry.illuminated-1;
-        float lightX=(entry.waxing?1:-1)*(float)Math.sqrt(Math.max(0,1-lightZ*lightZ));
-        for(int row=0;row<160;row++)for(int col=0;col<160;col++){
-            float x=(col+.5f-80)/80,y=(row+.5f-80)/80,r2=x*x+y*y;
-            int index=row*160+col,color=pixels[index];
-            if(r2>1){pixels[index]=0;continue;}
-            float light=x*lightX+(float)Math.sqrt(1-r2)*lightZ;
-            float brightness=.06f+.94f*(float)Math.sqrt(Math.max(0,light));
-            pixels[index]=(color&0xFF000000)|((int)(((color>>16)&255)*brightness)<<16)
-                    |((int)(((color>>8)&255)*brightness)<<8)|(int)((color&255)*brightness);
-        }
-        moon.setPixels(pixels,0,160,0,0,160,160);
+        lunar.phase(entry.illuminated,entry.waxing);
     }
     private void buildTint(float hour){
         int bucket=Math.round(hour*60);if(bucket==lastTint)return;lastTint=bucket;
@@ -92,15 +74,15 @@ final class LivingSky {
         buildTint(solarHour);
         c.save();c.scale(width/1920f,height/1080f);
         paint.setShader(tint);paint.setAlpha(SKY_ALPHA);c.drawRect(0,0,1920,1080,paint);paint.setShader(null);paint.setAlpha(255);
-        if(daytime||entry!=null){
+        if(daytime||entry!=null&&lunar.available()){
             float x=320+progress*1310,y=795-(float)Math.sin(progress*Math.PI)*365;
             float edge=Math.max(0,Math.min(1,Math.min(progress*15,(1-progress)*15)));
             if(!daytime)phase(entry);
             c.save();c.translate(x,y);
-            paint.setAlpha(Math.round(edge*255));paint.setShader(daytime?sunHalo:moonHalo);c.drawCircle(0,0,daytime?190:200,paint);paint.setShader(null);
+            if(daytime){paint.setAlpha(Math.round(edge*255));paint.setShader(sunHalo);c.drawCircle(0,0,190,paint);paint.setShader(null);}
             paint.setAlpha(Math.round(edge*CELESTIAL_ALPHA));
             float radius=(daytime?SUN_DIAMETER:MOON_DIAMETER)/2;
-            c.drawBitmap(daytime?solar:moon,null,new RectF(-radius,-radius,radius,radius),paint);
+            c.drawBitmap(daytime?solar:lunar.phase(entry.illuminated,entry.waxing),null,new RectF(-radius,-radius,radius,radius),paint);
             if(!daytime){
                 phaseLabel.setAlpha(Math.round(edge*255*.7f));
                 phaseLabel.getTextBounds(entry.phase,0,entry.phase.length(),labelBounds);

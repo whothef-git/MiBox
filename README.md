@@ -4,14 +4,14 @@ A calm, widget-first Android TV launcher with a living sky, local and world cloc
 
 Use the TV remote to move between **Home**, **Prayer Time**, **Weather** and **Smart Home**. Screen-tab navigation wraps from the last tab to the first and back.
 
-**Current version:** v3.0 (`versionCode 13`). Updated 1 November 2026 for main commit `4b649e3`, including the approved Weather and gold tab-focus updates through PR #15.
+**Current version:** v3.0 (`versionCode 13`). Updated 2 November 2026 with the approved NASA lunar-surface renderer, alongside the Weather and gold tab-focus updates.
 
-*All four previews below are short animated GIFs recorded directly on Sony BRAVIA on 1 November 2026 from the installed, optimized build matching that source. The 1920 × 1080 recordings are encoded at 960 × 540 and 15fps for the README. Clocks, Quran content, forecasts and device states reflect capture time; no device control commands were sent. Original-resolution stills and recording details are available in [capture details](docs/screenshots/README.md).*
+*All four previews below are short animated GIFs recorded directly on Sony BRAVIA on 1 November 2026 from the installed, optimized build matching that source. The 1920 × 1080 recordings are encoded at 960 × 540 and 15fps for the README. Clocks, Quran content, forecasts and device states reflect capture time; no device control commands were sent. These captures predate the NASA lunar-surface update. Original-resolution stills and recording details are available in [capture details](docs/screenshots/README.md).*
 
 ## What's new in v3
 
-- **Living sky:** a subtle clear-sky tint, translucent sun and moon, soft halos and horizon fades over the original geometric wallpaper. Time-specific moon illumination and waxing/waning orientation come from USNO, refreshed every fifteen minutes while visible.
-- **Textured sun and moon:** circular sun and moon artwork at 50% opacity, a restrained 15% sky tint, and a small moon-phase label. The moon is hidden when valid current phase data is unavailable.
+- **Living sky:** a subtle clear-sky tint, translucent sun and moon, a soft sun halo and horizon fades over the original geometric wallpaper. Time-specific moon illumination and waxing/waning orientation come from USNO, refreshed every fifteen minutes while visible.
+- **Textured sun and moon:** a spherical Moon rendered from NASA LROC color and LOLA terrain data, plus decorative sun artwork at 50% opacity, a restrained 15% sky tint, and a small moon-phase label. The Moon uses a 4K source map and cached 384px rendering at its existing 90px display size, with no exterior glow. It is hidden when valid current phase data is unavailable.
 - **Smooth clocks:** small local seconds alternate upward and downward as they change, with fixed digit positions to prevent clock shaking. The Saudi clock retains hours/minutes and uses the same alternating motion on minute changes.
 - **Quran verses by prayer time:** Arabic and original Malay translation from Mengaji.my, changing at each of the five official JAKIM prayer times. Text automatically fits the available space; no verse collection is bundled.
 - **Updated Weather screen:** Sunrise, Sunset and Next Rain replace the current-condition metric boxes. Eight upcoming hours show larger condition icons, temperature, rain chance and precipitation in millimetres, above a five-day outlook. Weather refreshes every ten minutes while the launcher is open.
@@ -40,7 +40,7 @@ Recent moon data is cached privately for up to thirty minutes. If a fresh value 
 
 ![Earlier TV timelapse showing the textured Moon and Sun moving along the ambient sky arcs](docs/screenshots/octahedron-sky-timelapse.gif)
 
-Recorded on the Sony TV on 31 October 2026 during the approved textured-sky preview. This GIF condenses the saved recording of about 105 seconds to about 18 seconds. Only celestial travel was accelerated in that preview; the clock was not advanced, and it does not demonstrate lunar phases changing over a single night. It predates the latest clock-seconds, moon-label and gold-tab updates; the four card GIFs show the current UI. The temporary timelapse hook was removed from the normal launcher.
+Recorded on the Sony TV on 31 October 2026 during the approved textured-sky preview. This GIF condenses the saved recording of about 105 seconds to about 18 seconds. Only celestial travel was accelerated in that preview; the clock was not advanced, and it does not demonstrate lunar phases changing over a single night. It predates the latest clock-seconds, moon-label and gold-tab updates; the four card GIFs show the later UI layout, but also predate the NASA lunar-surface renderer. The temporary timelapse hook was removed from the normal launcher.
 
 ### Prayer Time
 
