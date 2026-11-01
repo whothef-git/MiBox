@@ -1,7 +1,7 @@
 # Phase 2.1 — GO DAIKIN cloud feasibility
 
 Date: 2026-10-28. Stable launcher: Octahedron 2.0, version code 11.
-User-provided unit: Daikin FTKH35BV1MF, GO DAIKIN firmware V1.2.5, TV AC IP 192.168.50.93.
+User-provided unit: Daikin FTKH35BV1MF, GO DAIKIN firmware V1.2.5. The private LAN IP is omitted.
 
 ## Finding
 

@@ -36,11 +36,13 @@ the requested device. Actual replies contain a flat shadow with `Set_Temp`, `upd
 
 ## Identity and confirmation
 
-First binding selects exactly one previously verified cloud registration using the known TV name,
-IP and firmware together. The returned stable cloud ID is then checked against the targeted read.
-On user confirmation that ID is pinned in the encrypted vault. Subsequent sessions select only
-the pinned ID, independent of name/IP changes. The transport restricts every targeted read/write
-to that ID. No actual cloud ID/key is embedded in code, logged or shown in the UI.
+The original validation initially identified the verified registration and pinned its stable cloud ID
+in the encrypted vault on user confirmation. The historical test now requires that existing private
+binding before authenticating; its former name/IP/firmware bootstrap has been removed. Missing or
+empty binding stops the test, and this screen no longer enrolls a new target. It selects only the
+pinned ID, independent of name/IP changes. The transport restricts every targeted read/write to that
+ID. No actual cloud ID/key is embedded in code, logged or shown in the UI. This test screen is excluded
+from the working launcher build; the launcher's account setup and device registry are unchanged.
 
 The developer screen initially offers only Read, Prepare 1 C and Review payload. Explicit recovery
 review appears only when a pending journal is detected after an action. Prepare reads state and creates a 15-minute plan; it sends nothing to the AC. A cached connected snapshot can be used only for this preview. Review
