@@ -120,6 +120,8 @@ final class PrayerVerse {
     private static Entry parseData(JSONObject data) throws Exception {
         int id=data.getInt("id"), surah=data.getInt("surah_id"), ayah=data.getInt("nombor_ayat");
         String name=data.getString("nama_surah").trim(), arabic=data.getString("teks_arab").trim(), malay=data.getString("terjemahan_melayu").trim();
+        // Some API strings contain a literal JSON quote escape after JSON decoding.
+        while(malay.contains("\\\"")) malay=malay.replace("\\\"", "\"");
         if(id<1 || id>6236 || surah<1 || surah>114 || ayah<1 || ayah>286 || name.isEmpty() || name.length()>120
                 || arabic.isEmpty() || malay.isEmpty() || "null".equalsIgnoreCase(malay) || arabic.length()>20000 || malay.length()>20000
                 || !java.util.regex.Pattern.compile("[\\u0600-\\u06FF]").matcher(arabic).find()

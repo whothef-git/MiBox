@@ -305,11 +305,11 @@
                                     android:paddingStart="24dp"
                                     android:paddingEnd="24dp"
                                     android:paddingTop="0dp"
-                                    android:paddingBottom="12dp"
+                                    android:paddingBottom="0dp"
                                     android:fontFamily="@font/alexandria"
                                     android:gravity="top|center_horizontal"
                                     android:textDirection="firstStrong"
-                                    android:lineSpacingMultiplier="1.12"
+                                    android:lineSpacingMultiplier="1.05"
                                     android:textColor="@color/plaster_100"
                                     android:textSize="16sp" />
 

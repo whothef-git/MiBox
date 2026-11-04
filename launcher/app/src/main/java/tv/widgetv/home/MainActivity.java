@@ -118,6 +118,7 @@ public class MainActivity extends Activity {
     /** Debug builds only: a fixed local date for the thought of the day (adb fake_date), or null. */
     private LocalDate fakeDate;
     private PrayerVerse verses;
+    private MadaniVerseArtwork verseArtwork;
     private long shownVerseSlot = -1;
     private View hereWeather, thought;
     private ImageView awayFlag;
@@ -152,6 +153,10 @@ public class MainActivity extends Activity {
         thoughtText = findViewById(R.id.thought_text);
         thoughtSource = findViewById(R.id.thought_source);
         verses = new PrayerVerse(this);
+        verseArtwork = new MadaniVerseArtwork();
+        thoughtText.addOnLayoutChangeListener((view,left,top,right,bottom,oldLeft,oldTop,oldRight,oldBottom)->{
+            if((right-left!=oldRight-oldLeft||bottom-top!=oldBottom-oldTop)&&tabIdx==1){shownVerseSlot=-1;renderVerse();}
+        });
         cfg = Config.get(this);
         header = findViewById(R.id.header);
         awayRow = findViewById(R.id.away_row);
@@ -306,6 +311,7 @@ public class MainActivity extends Activity {
         weather.shutdown();
         sky.shutdown();
         verses.shutdown();
+        verseArtwork.shutdown();
         smartHome.shutdown();
         homeRain.shutdown();
     }
@@ -1046,8 +1052,18 @@ public class MainActivity extends Activity {
         long slot = PrayerVerse.slot(day.now, day.times, day.yesterdayIsha);
         PrayerVerse.Entry entry = verses.get(slot);
         if (entry != null) {
-            if (slot != shownVerseSlot) {
-                thoughtText.setText(entry.display(quranFont));
+            android.graphics.Bitmap artwork=verseArtwork.get(entry);
+            if(artwork==null){
+                shownVerseSlot=-1;
+                thoughtText.setText(verseArtwork.failed(entry)?"Paparan ayat Madani belum dapat dimuatkan. Sila semak sambungan Internet.":"Memuatkan paparan ayat Madani...");
+                if(tabIdx==1)verseArtwork.maybeFetch(entry,()->{if(!isDestroyed()){shownVerseSlot=-1;renderVerse();}});
+            }else if (slot != shownVerseSlot) {
+                int contentWidth=thoughtText.getWidth()-thoughtText.getPaddingLeft()-thoughtText.getPaddingRight();
+                if(contentWidth<=0)contentWidth=getResources().getDisplayMetrics().widthPixels-dp(160);
+                int contentHeight=thoughtText.getHeight()-thoughtText.getPaddingTop()-thoughtText.getPaddingBottom();
+                if(contentHeight<=0)contentHeight=dp(160);
+                thoughtText.setText(MadaniVerseArtwork.display(entry,artwork,contentWidth,contentHeight));
+                thoughtText.setContentDescription(entry.arabic+"\n"+entry.malay+"\n"+entry.reference());
                 shownVerseSlot = slot;
             }
         } else {
