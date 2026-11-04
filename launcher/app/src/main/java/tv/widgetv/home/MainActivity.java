@@ -89,7 +89,7 @@ public class MainActivity extends Activity {
     private LinearLayout menu;
     private ScreenTabs screenTabs;
     private ForecastView forecastView;
-    private WeatherAtmosphereView atmosphere;
+    private WeatherAtmosphereView atmosphere, homeRain;
     private View prayerScreen;
     private SmartHomeView smartHome;
     private int tabIdx;
@@ -169,6 +169,7 @@ public class MainActivity extends Activity {
         screenTabs = findViewById(R.id.screen_tabs);
         forecastView = findViewById(R.id.forecast_screen);
         atmosphere = findViewById(R.id.weather_atmosphere);
+        homeRain = findViewById(R.id.home_rain);
         prayerScreen = findViewById(R.id.prayer_screen);
         smartHome = findViewById(R.id.smart_home_screen);
         smartHome.setFocusCardsCallback(() -> focus(Zone.SMART, 0, false));
@@ -193,6 +194,7 @@ public class MainActivity extends Activity {
         gridAdapter = new TileAdapter(cardW, cardH);
         setUpList(dockList = findViewById(R.id.dock), dockAdapter);
         setUpList(gridList = findViewById(R.id.grid), gridAdapter);
+        homeRain.setHomeDock(dockList);
 
         prefs = getSharedPreferences("focus", MODE_PRIVATE);
         try {
@@ -238,6 +240,7 @@ public class MainActivity extends Activity {
         glass.setRunning(true);
         smartHome.setRunning(true);
         atmosphere.setRunning(tabIdx == 2);
+        homeRain.setRunning(tabIdx == 0);
         cacheWeatherLayers(tabIdx == 2);
         IntentFilter timeFilter = new IntentFilter(Intent.ACTION_TIME_TICK);
         timeFilter.addAction(Intent.ACTION_TIME_CHANGED);
@@ -264,6 +267,7 @@ public class MainActivity extends Activity {
         glass.setRunning(false);
         smartHome.setRunning(false);
         atmosphere.setRunning(false);
+        homeRain.setRunning(false);
         cacheWeatherLayers(false);
         unregisterReceiver(timeReceiver);
         if (zone == Zone.MENU) closeMenu();
@@ -303,11 +307,16 @@ public class MainActivity extends Activity {
         sky.shutdown();
         verses.shutdown();
         smartHome.shutdown();
+        homeRain.shutdown();
     }
 
     private void cacheWeatherLayers(boolean active){
         int layer=active?View.LAYER_TYPE_HARDWARE:View.LAYER_TYPE_NONE;
-        if(sky.getLayerType()!=layer)sky.setLayerType(layer,null);
+        boolean homeWet=resumed&&tabIdx==0&&homeRain.isRaining();
+        int dockLayer=homeWet?View.LAYER_TYPE_HARDWARE:View.LAYER_TYPE_NONE;
+        if(dockList.getLayerType()!=dockLayer)dockList.setLayerType(dockLayer,null);
+        int skyLayer=active||homeWet?View.LAYER_TYPE_HARDWARE:View.LAYER_TYPE_NONE;
+        if(sky.getLayerType()!=skyLayer)sky.setLayerType(skyLayer,null);
         if(forecastView.getLayerType()!=layer)forecastView.setLayerType(layer,null);
     }
 
@@ -326,6 +335,8 @@ public class MainActivity extends Activity {
         smartHome.setScreenActive(smart);
         screenTabs.setState(index, zone == Zone.TABS);
         atmosphere.setScreenActive(index == 2, animate);
+        homeRain.setScreenActive(index == 0, animate);
+        homeRain.setRunning(resumed && index == 0);
         atmosphere.setRunning(resumed && index == 2);
         cacheWeatherLayers(resumed && index == 2);
         if (index == 1) renderVerse();
@@ -955,6 +966,8 @@ public class MainActivity extends Activity {
         Weather.City[] w = weather.current();
         if (forecastView != null) forecastView.setWeather(w, weather.forecast(), weather.lastFetchFailed());
         if (atmosphere != null) atmosphere.setWeather(w == null ? null : w[0]);
+        if (homeRain != null) homeRain.setWeather(w == null ? null : w[0]);
+        cacheWeatherLayers(resumed && tabIdx == 2);
         boolean h24 = DateFormat.is24HourFormat(this);
         ZonedDateTime local = nowZoned();
         ZonedDateTime away = local.withZoneSameInstant(cfg.secondZone);
@@ -1133,6 +1146,7 @@ public class MainActivity extends Activity {
             if (intent.hasExtra("weather_effect_preview")) {
                 int preview = intent.getIntExtra("weather_effect_preview", -1);
                 atmosphere.setPreviewCode(preview);
+                homeRain.setPreviewCode(preview);
                 Log.i(TAG, "weather visual effect preview: " + preview);
             }
             // Everything time-based (both clocks, weekday prefix, date line, sky, timeline, thought) reads nowMillis().

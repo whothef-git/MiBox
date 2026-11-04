@@ -85,6 +85,43 @@ public final class WeatherRainChecks extends Instrumentation {
             check(Arrays.equals(a,b),"clear weather has no moving rain particles");
             ui(()->{view[0].setRunning(false);view[0].setScreenActive(false,false);});
             check(view[0].getVisibility()==View.GONE,"atmosphere is hidden outside Weather");
+            android.graphics.RectF[] tiles={new android.graphics.RectF(100,400,250,480),new android.graphics.RectF(300,400,450,480)};
+            check(WeatherAtmosphereView.impactSurface(150,540,tiles,2)==400,"front drop hits app tile top");
+            check(WeatherAtmosphereView.impactSurface(270,540,tiles,2)==540,"drop in dock gap reaches bottom");
+            check(WeatherAtmosphereView.impactSurface(250,540,tiles,2)==540,"tile right edge does not catch a gap drop");
+            check(WeatherAtmosphereView.impactSurface(150,540,tiles,0)==540,"hidden dock has no stale collision surface");
+            ui(()->{
+                view[0].setHomeDock(new androidx.recyclerview.widget.RecyclerView(getTargetContext()));
+                view[0].setWeather(new Weather.City(25,3,false,31,24,true));
+                first.eraseColor(0);view[0].draw(new Canvas(first));
+            });
+            first.getPixels(a,0,960,0,0,960,540);
+            check(Arrays.stream(a).allMatch(pixel->pixel==0),"cloudy Home has no rain overlay or added sky tint");
+            ui(()->{first.eraseColor(0);view[0].drawWetTiles(new Canvas(first),tiles,2,12.3,63);});
+            first.getPixels(a,0,960,0,0,960,540);
+            int wetPixels=0,leakedPixels=0;
+            for(int i=0;i<a.length;i++)if(a[i]!=0){
+                if(tiles[0].contains(i%960,i/960)||tiles[1].contains(i%960,i/960))wetPixels++;else leakedPixels++;
+            }
+            check(wetPixels>100&&leakedPixels==0,"wet film and beads stay inside app tiles");
+            int rectangularEdgePixels=0;
+            for(android.graphics.RectF tile:tiles){
+                for(int x=(int)tile.left;x<(int)tile.right;x++){
+                    if(a[(int)tile.top*960+x]!=0)rectangularEdgePixels++;
+                    if(a[((int)tile.bottom-1)*960+x]!=0)rectangularEdgePixels++;
+                }
+                for(int y=(int)tile.top;y<(int)tile.bottom;y++){
+                    if(a[y*960+(int)tile.left]!=0)rectangularEdgePixels++;
+                    if(a[y*960+(int)tile.right-1]!=0)rectangularEdgePixels++;
+                }
+            }
+            check(rectangularEdgePixels==0,"wet highlights have transparent edges without a rectangular wash or rim");
+            ui(()->{second.eraseColor(0);view[0].drawWetTiles(new Canvas(second),tiles,2,14.3,63);});
+            second.getPixels(b,0,960,0,0,960,540);
+            check(!Arrays.equals(a,b),"water beads slide over wet tiles");
+            ui(()->{first.eraseColor(0);view[0].drawWetTiles(new Canvas(first),tiles,2,12.3,2);});
+            first.getPixels(a,0,960,0,0,960,540);
+            check(Arrays.stream(a).allMatch(pixel->pixel==0),"dry conditions have no wet tile film");
             result.putString("stream","PASS: "+checks+" weather-rain checks on TV. Weather conditions are fixtures; no live reading or smart-device control changed.\n");
             finish(Activity.RESULT_OK,result);
         }catch(Throwable error){result.putString("stream","FAIL after "+checks+" rain checks: "+error+"\n");finish(Activity.RESULT_CANCELED,result);}
