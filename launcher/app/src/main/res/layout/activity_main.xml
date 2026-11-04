@@ -332,7 +332,7 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_gravity="bottom"
-                        android:layout_marginBottom="22dp"
+                        android:layout_marginBottom="10dp"
                         android:layout_marginEnd="56dp"
                         android:layout_marginStart="56dp"
                         android:clipChildren="false"
@@ -395,4 +395,14 @@
 
         </FrameLayout>
     </ScrollView>
+
+    <!-- Non-interactive foreground rain: Home only; follows visible dock card bounds. -->
+    <tv.widgetv.home.WeatherAtmosphereView
+        android:id="@+id/home_rain"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:importantForAccessibility="no"
+        android:focusable="false"
+        android:clickable="false"
+        android:visibility="gone" />
 </FrameLayout>

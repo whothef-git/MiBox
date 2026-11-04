@@ -31,7 +31,114 @@ public final class WeatherAtmosphereView extends View {
     private volatile boolean closed;
     private LinearGradient rainBackdrop;
     private Weather.City current;
-    private boolean running, screenActive;
+    private boolean running, screenActive, home;
+    private androidx.recyclerview.widget.RecyclerView homeDock;
+    private final RectF[] cards=new RectF[7];
+    private final android.graphics.Rect visibleCard=new android.graphics.Rect();
+    private final int[] origin=new int[2];
+    private int cardCount;
+    private final Paint wetPaint=new Paint(Paint.ANTI_ALIAS_FLAG|Paint.FILTER_BITMAP_FLAG);
+    private final Bitmap[] wetFilm=new Bitmap[7];
+    private Bitmap waterBead;
+    private final android.graphics.drawable.Drawable[] wetForeground=new android.graphics.drawable.Drawable[7];
+    private void updateWetForegrounds(boolean wet){
+        if(homeDock==null)return;
+        for(int i=0;i<homeDock.getChildCount()&&i<wetForeground.length;i++){
+            View card=homeDock.getChildAt(i).findViewById(R.id.card);
+            if(card==null)continue;
+            android.graphics.drawable.Drawable wanted=wet?wetForeground[i]:null;
+            if(card.getForeground()!=wanted)card.setForeground(wanted);
+        }
+    }
+    void setHomeDock(androidx.recyclerview.widget.RecyclerView dock){home=true;homeDock=dock;prepareWetTiles();}
+    boolean isRaining(){return rainCode(previewCode>=0?previewCode:current==null?-1:current.code);}
+    private void updateCards(){
+        cardCount=0;
+        if(homeDock==null||!homeDock.isShown())return;
+        getLocationOnScreen(origin);
+        for(int i=0;i<homeDock.getChildCount()&&cardCount<cards.length;i++){
+            View card=homeDock.getChildAt(i).findViewById(R.id.card);
+            if(card==null||!card.getGlobalVisibleRect(visibleCard))continue;
+            if(cards[cardCount]==null)cards[cardCount]=new RectF();
+            cards[cardCount++].set(visibleCard.left-origin[0],visibleCard.top-origin[1],
+                    visibleCard.right-origin[0],visibleCard.bottom-origin[1]);
+        }
+    }
+    static float impactSurface(float x,float bottom,RectF[] cards,int count){
+        float floor=bottom;
+        for(int i=0;i<count;i++)if(x>=cards[i].left&&x<cards[i].right&&cards[i].top>0)
+            floor=Math.min(floor,cards[i].top);
+        return floor;
+    }
+    /** Small cached translucent films; never blur, replace or recolor the app artwork itself. */
+    private void prepareWetTiles(){
+        if(waterBead!=null)return;
+        waterBead=Bitmap.createBitmap(24,32,Bitmap.Config.ARGB_8888);
+        Canvas bead=new Canvas(waterBead);Paint p=new Paint(Paint.ANTI_ALIAS_FLAG);
+        p.setShader(new RadialGradient(10,11,13,new int[]{0x08FFFFFF,0x123E6783,0x80405B72},
+                new float[]{0,.64f,1},Shader.TileMode.CLAMP));
+        bead.drawOval(3,3,21,29,p);p.setShader(null);
+        p.setStyle(Paint.Style.STROKE);p.setStrokeWidth(1.1f);p.setColor(0x807B98AE);
+        bead.drawOval(3,3,21,29,p);p.setColor(0xD9FFFFFF);
+        bead.drawArc(4,4,20,27,205,88,false,p);
+        p.setStyle(Paint.Style.FILL);p.setColor(0xC0FFFFFF);bead.drawOval(7,6,11,11,p);
+        for(int tile=0;tile<wetFilm.length;tile++){
+            Bitmap film=Bitmap.createBitmap(256,144,Bitmap.Config.ARGB_8888);Canvas c=new Canvas(film);
+            // Local reflected light fades to transparent before every tile edge; no rectangular wash or rim.
+            c.save();c.translate(121,49);c.scale(103,34);
+            p.setShader(new RadialGradient(0,0,1,new int[]{0x20D6EDF8,0x0AFFFFFF,0x00FFFFFF},
+                    new float[]{0,.45f,1},Shader.TileMode.CLAMP));
+            c.drawCircle(0,0,1,p);p.setShader(null);c.restore();
+            // Thin, irregular water trails are baked into the cached foreground, not redrawn each frame.
+            p.setStrokeWidth(.8f);p.setColor(0x35DEF2FF);
+            for(int trail=0;trail<5;trail++){
+                float tx=12+seed(tile*5+trail,277)*232,ty=10+seed(tile*5+trail,281)*76;
+                c.drawLine(tx,ty,tx+.5f,Math.min(137,ty+18+seed(tile*5+trail,283)*30),p);
+            }
+            for(int drop=0;drop<36;drop++){
+                float x=10+seed(drop+tile*37,181)*234,y=9+seed(drop+tile*37,193)*122;
+                float r=1.5f+seed(drop+tile*37,211)*2.8f;
+                dropRect.set(x-r,y-r*1.3f,x+r,y+r*1.3f);
+                c.drawBitmap(waterBead,null,dropRect,wetPaint);
+            }
+            wetFilm[tile]=film;
+            android.graphics.drawable.BitmapDrawable foreground=new android.graphics.drawable.BitmapDrawable(getResources(),film);
+            foreground.setGravity(android.view.Gravity.FILL);foreground.setFilterBitmap(true);
+            wetForeground[tile]=foreground;
+        }
+    }
+    void drawWetTiles(Canvas c,RectF[] surfaces,int count,double seconds,int code){
+        if(!home||!rainCode(code)||waterBead==null)return;
+        for(int tile=0;tile<count;tile++)c.drawBitmap(wetFilm[tile],null,surfaces[tile],wetPaint);
+        drawWetBeads(c,surfaces,count,seconds);
+    }
+    private void drawWetBeads(Canvas c,RectF[] surfaces,int count,double seconds){
+        for(int tile=0;tile<count;tile++){
+            RectF card=surfaces[tile];
+            // Three independent rivulets per tile; the static water film stays in the dock cache.
+            for(int flow=0;flow<3;flow++){
+                int id=tile*3+flow;
+                float progress=(float)((seconds/(6+seed(id,227)*7)+seed(id,239))%1);
+                float x=card.left+card.width()*(.09f+.82f*seed(id,251));
+                float y=card.top+card.height()*(.14f+.70f*progress);
+                float r=(1.8f+seed(id,263)*1.2f)*d;
+                float fade=(float)Math.sin(progress*Math.PI);
+                wetPaint.setColor(0xFFD8F1FF);wetPaint.setStrokeWidth(.6f*d);
+                wetPaint.setAlpha((int)(48*fade));c.drawLine(x,y-9*d*fade,x,y-r,wetPaint);
+                wetPaint.setAlpha((int)(225*fade));
+                dropRect.set(x-r,y-r*1.35f,x+r,y+r*1.35f);
+                c.drawBitmap(waterBead,null,dropRect,wetPaint);
+            }
+        }
+        wetPaint.setAlpha(255);
+    }
+    private float dropXAt(int i,float w,double seconds){
+        return (float)((dropX[i]*(w+24*d)+seconds*(2+dropDepth[i]*3)*d)%(w+24*d))-12*d;
+    }
+    private float floor(int i,float w,float h,double seconds){
+        // Collision only changes where a front drop ends, never its Weather-card trajectory or cycle.
+        return home&&i%2==0?impactSurface(dropXAt(i,w,seconds),h,cards,cardCount):h;
+    }
     private int previewCode = -1;
     private final Runnable expirePreview = () -> { previewCode=-1; invalidate(); };
 
@@ -51,12 +158,13 @@ public final class WeatherAtmosphereView extends View {
         previewText.setFontVariationSettings("'wght' 400");
         previewText.setTextSize(10*d); previewText.setColor(0xFFC2CFDF); previewText.setTextAlign(Paint.Align.CENTER);
     }
-    void setWeather(Weather.City city) { current=city; buildBackdrop(); if(screenActive)prepareClouds(); invalidate(); }
+    void setWeather(Weather.City city) { current=city; buildBackdrop(); if(screenActive&&!home)prepareClouds(); invalidate(); }
     void setRunning(boolean on) { running=on; if(on) invalidate(); }
     void setScreenActive(boolean on, boolean animate) {
         if (on==screenActive && (on || getVisibility()==GONE)) return;
         screenActive=on; animate().cancel();
-        if(on)prepareClouds();
+        if(home&&!on)updateWetForegrounds(false);
+        if(on&&!home)prepareClouds();
         if (!animate) { setAlpha(on?1f:0f); setVisibility(on?VISIBLE:GONE); return; }
         if(on) {
             if(getVisibility()!=VISIBLE) { setAlpha(0f); setVisibility(VISIBLE); }
@@ -66,7 +174,7 @@ public final class WeatherAtmosphereView extends View {
     void setPreviewCode(int code) {
         if(!BuildConfig.DEBUG) return;
         removeCallbacks(expirePreview); previewCode=code;
-        if(code>=0)prepareClouds();
+        if(code>=0&&!home)prepareClouds();
         if(code>=0) postDelayed(expirePreview,15000);
         invalidate();
     }
@@ -122,9 +230,11 @@ public final class WeatherAtmosphereView extends View {
         cloudWorker.start();
     }
     private void drawRain(Canvas c,float w,float h,double seconds,int code){
-        if(rainBackdrop==null)buildBackdrop();
-        light.setShader(rainBackdrop);c.drawRect(0,0,w,h,light);light.setShader(null);
-        if(cloudTexture!=null){
+        if(!home){
+            if(rainBackdrop==null)buildBackdrop();
+            light.setShader(rainBackdrop);c.drawRect(0,0,w,h,light);light.setShader(null);
+        }
+        if(!home&&cloudTexture!=null){
             rain.setStyle(Paint.Style.FILL);rain.setColor(Color.WHITE);rain.setAlpha(125);
             float width=w*1.25f;
             for(int layer=0;layer<2;layer++){
@@ -141,8 +251,16 @@ public final class WeatherAtmosphereView extends View {
         for(int i=0;i<count;i++){
             float depth=dropDepth[i],length=(6+depth*19)*d;
             double speed=(95+depth*300)*d;
-            float y=(float)((dropPhase[i]*(h+2*length)+seconds*speed)%(h+2*length))-length;
-            float x=(float)((dropX[i]*(w+24*d)+seconds*(2+depth*3)*d)%(w+24*d))-12*d;
+            float ground=floor(i,w,h,seconds),span=h+2*length;
+            float y=(float)((dropPhase[i]*span+seconds*speed)%span)-length;
+            float x=dropXAt(i,w,seconds);
+            if(home){
+                if(y>ground)continue;
+                boolean behind=false;
+                for(int card=0;card<cardCount;card++)if(x>=cards[card].left&&x<cards[card].right
+                        &&y>cards[card].top&&y-length<cards[card].bottom){behind=true;break;}
+                if(behind)continue;
+            }
             float width=(.65f+depth*1.2f)*d;
             rain.setAlpha((int)(68+depth*105));
             dropRect.set(x-width/2,y-length,x+width/2,y);
@@ -156,14 +274,15 @@ public final class WeatherAtmosphereView extends View {
         rain.setShader(null);rain.setColor(0xFFD5E8F5);rain.setStyle(Paint.Style.STROKE);
         for(int i=0;i<rainDrops(code);i++){
             float depth=dropDepth[i],length=(6+depth*19)*d;
+            float surface=floor(i,w,h,seconds);
             double speed=(95+depth*300)*d,span=h+2*length,period=span/speed;
-            double impact=(h+length-dropPhase[i]*span)/speed;
+            double impact=(surface+length-dropPhase[i]*span)/speed;
             double age=((seconds-impact)%period+period)%period;
             float life=.30f+depth*.16f;
             if(age>life)continue;
             float t=(float)(age/life),fade=(1-t)*(1-t);
-            float x=(float)((dropX[i]*(w+24*d)+(seconds-age)*(2+depth*3)*d)%(w+24*d))-12*d;
-            float ground=h-2*d;
+            float x=dropXAt(i,w,seconds-age);
+            float ground=surface-(surface<h?.5f:2)*d;
             rain.setStrokeWidth((.55f+depth*.45f)*d);
             rain.setAlpha((int)((95+depth*105)*fade));
             float radius=(1+t*(5+depth*8))*d;
@@ -191,13 +310,15 @@ public final class WeatherAtmosphereView extends View {
     }
     @Override protected void onDraw(Canvas c) {
         int code=previewCode>=0?previewCode:current==null?-1:current.code;
-        if(code<0) return;
+        if(home)updateWetForegrounds(screenActive&&rainCode(code));
+        if(code<0||home&&!rainCode(code)) return;
+        if(home)updateCards();
         float w=getWidth(), h=getHeight();
         if(w<=0||h<=0)return;
         double elapsed=(SystemClock.uptimeMillis()-animationStart)/1000d;
         float seconds=(float)elapsed;
         boolean wet=rainCode(code), snowy=snowCode(code), cloudy=code>=1;
-        if(wet){drawRain(c,w,h,elapsed,code);}
+        if(wet){if(home)drawWetBeads(c,cards,cardCount,elapsed);drawRain(c,w,h,elapsed,code);}
         else if(cloudy) {
             for(int i=0;i<7;i++) {
                 float x=((seed(i,17)*w+seconds*(4+i*.4f)*d)%(w*1.6f))-w*.3f;
@@ -220,7 +341,7 @@ public final class WeatherAtmosphereView extends View {
         }
     }
     void shutdown(){
-        closed=true;running=false;removeCallbacks(expirePreview);animate().cancel();
+        closed=true;running=false;updateWetForegrounds(false);removeCallbacks(expirePreview);animate().cancel();
         if(cloudWorker!=null)cloudWorker.interrupt();
     }
     @Override protected void onDetachedFromWindow() {

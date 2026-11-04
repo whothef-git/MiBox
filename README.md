@@ -4,9 +4,9 @@ A calm, widget-first Android TV launcher with a living sky, local and world cloc
 
 Use the TV remote to move between **Home**, **Prayer Time**, **Weather** and **Smart Home**. Screen-tab navigation wraps from the last tab to the first and back.
 
-**Current version:** v3.0 (`versionCode 13`). Updated 2 November 2026 with the approved NASA lunar-surface renderer, alongside the Weather and gold tab-focus updates.
+**Current version:** v3.0 (`versionCode 13`). Updated 4 November 2026 with Home rain, wet app tiles and the lower dock, alongside the NASA lunar-surface, Weather and gold tab-focus updates.
 
-*All four previews below are short animated GIFs recorded directly on Sony BRAVIA on 1 November 2026 from the installed, optimized build matching that source. The 1920 × 1080 recordings are encoded at 960 × 540 and 15fps for the README. Clocks, Quran content, forecasts and device states reflect capture time; no device control commands were sent. These captures predate the NASA lunar-surface update. Original-resolution stills and recording details are available in [capture details](docs/screenshots/README.md).*
+*All four previews below are short animated GIFs recorded directly on Sony BRAVIA on 1 November 2026 from the installed, optimized build matching that source. The 1920 × 1080 recordings are encoded at 960 × 540 and 15fps for the README. Clocks, Quran content, forecasts and device states reflect capture time; no device control commands were sent. These captures predate the NASA lunar-surface, lower dock and Home rain/wet-tile updates. Original-resolution stills and recording details are available in [capture details](docs/screenshots/README.md).*
 
 ## What's new in v3
 
@@ -15,7 +15,7 @@ Use the TV remote to move between **Home**, **Prayer Time**, **Weather** and **S
 - **Smooth clocks:** small local seconds alternate upward and downward as they change, with fixed digit positions to prevent clock shaking. The Saudi clock retains hours/minutes and uses the same alternating motion on minute changes.
 - **Quran verses by prayer time:** Arabic and original Malay translation from Mengaji.my, changing at each of the five official JAKIM prayer times. Text automatically fits the available space; no verse collection is bundled.
 - **Updated Weather screen:** Sunrise, Sunset and Next Rain replace the current-condition metric boxes. Eight upcoming hours show larger condition icons, temperature, rain chance and precipitation in millimetres, above a five-day outlook. Weather refreshes every ten minutes while the launcher is open.
-- **Moving rain and splashes:** layered drifting clouds, varied falling droplets and brief bottom-edge impact splashes respond to the current rain condition. Hourly rain probability does not activate rain animation.
+- **Moving rain and wet apps:** Home and Weather share smooth per-refresh falling rain and bottom-edge splashes. Home also splashes on app-tile tops and adds cached water beads, trails and sliding droplets. Highlights fade before tile edges to avoid a rectangular wet overlay. Weather retains its clouds and rain tint. Only the current condition activates rain; hourly probability does not.
 - **Clearer tab focus:** focused tab text and its short underline fade to the Islamic calendar's gold (`#D8B46A`), with a smooth 220ms transition and a measured 25px text-to-underline gap on the target TV. No pill background is used.
 - **Dynamic ambient app lighting:** the focused app's colors illuminate the dock with smooth focus transitions.
 - **Faster GO DAIKIN controls:** immediate optimistic display updates, debounced target dispatch and protection against background polling overwriting in-flight settings.
@@ -28,7 +28,7 @@ Use the TV remote to move between **Home**, **Prayer Time**, **Weather** and **S
 
 ![Animated Home screen with local and Saudi clocks, Malay Hijri date, living sky and ambient app dock](docs/screenshots/octahedron-home.gif)
 
-Local and secondary-city clocks, Gregorian and Malay Hijri dates, weather summaries, system shortcuts and an app dock sit over a geometric sky background. The configured dock apps appear in a row, with remaining apps available from the grid. Inputs, Wi-Fi and Settings remain accessible from the remote.
+Local and secondary-city clocks, Gregorian and Malay Hijri dates, weather summaries, system shortcuts and an app dock sit over a geometric sky background. The configured dock apps appear in a row, with remaining apps available from the grid. The dock sits 24px lower at the target TV resolution, with a 10dp bottom container margin. Inputs, Wi-Fi and Settings remain accessible from the remote.
 
 The local clock includes smaller seconds with alternating up/down transitions. The Saudi clock keeps its hours/minutes format. Moving up from the dock highlights the focused screen tab with gold text and underline; moving back down fades the gold away while the active-screen underline remains.
 
@@ -67,7 +67,7 @@ Weather refreshes when the saved reading is at least ten minutes old, checked on
 
 Next Rain scans the next 24 hours for forecast precipitation with a rainy condition code. It shows **Now** for currently reported rain, an approximate hourly time otherwise, **None 24h** for a complete dry window, or a dash when data is unavailable. It is an estimate, not a minute-by-minute rain-onset alert. Sunrise and Sunset come from the same daily weather feed.
 
-Condition-driven weather atmosphere remains separate from the living-sky overlay. Falling rain, drifting clouds and bottom-edge splashes depend on current conditions, not forecast precipitation probability, and stop outside Weather. The app dock stays hidden to leave room for the five-day strip. Weather summaries for the local and secondary cities remain in the header. No Open-Meteo API key is required. See [rain behavior and TV checks](docs/weather-rain.md).
+Condition-driven weather atmosphere remains separate from the living-sky overlay. Falling rain, drifting clouds and bottom-edge splashes depend on current conditions, not forecast precipitation probability, and stop when their screen is inactive. Home has its own transparent rain layer with wet app tiles and tile-top impacts; Prayer Time and Smart Home remain clear. The app dock stays hidden on Weather to leave room for the five-day strip. Weather summaries for the local and secondary cities remain in the header. No Open-Meteo API key is required. See [rain behavior and TV checks](docs/weather-rain.md).
 
 ### Smart Home
 
@@ -109,7 +109,7 @@ Release builds enable R8 and resource shrinking. The current release variant use
 
 ## Validation
 
-The latest Weather work completed debug, optimized release and instrumentation-test APK builds, with **45 WeatherRainChecks passing on the Sony TV** using weather fixtures. They cover rain classification, movement, bottom splashes, sunrise/sunset parsing, next-rain timing and decimal precipitation amounts. The final gold tab-focus build also compiled successfully and was installed and visually checked on the TV; its exact gold and 25px gap were measured from screenshots. Documentation captures on 1 November did not rerun those suites or exercise smart-device controls.
+The latest Home rain and wet-dock update completed debug, optimized release and instrumentation-test APK builds, with **54 WeatherRainChecks passing on the Sony TV** using weather fixtures. They cover forecast parsing, rain classification and movement, bottom splashes, dock collisions, wet-texture bounds and transparent edges, sliding beads and dry-state removal. Nuvio and beIN Sports were visually checked using a labeled rain preview, then live weather was restored. The final gold tab-focus build also compiled successfully and was installed and visually checked on the TV; its exact gold and 25px gap were measured from screenshots. Documentation captures on 1 November did not rerun those suites or exercise smart-device controls.
 
 Earlier validation includes **14 ClockHeaderChecks**, **43 LivingSkyChecks** and **34 PrayerVerseChecks** on the Sony TV. The four existing host suites previously passed **304 synthetic checks**: 70 TP-Link protocol/state, 75 GO DAIKIN cloud, 75 temperature-control and 84 fan/mode/control checks. These host checks do not communicate with real devices or establish that every smart-device control works on hardware.
 
