@@ -48,7 +48,7 @@ Recorded on the Sony TV on 31 October 2026 during the approved textured-sky prev
 
 A full-width, read-only **official JAKIM SGR01 prayer timeline** accompanies **AL QURAN VERSE OF THE DAY**. Prayer schedules are cached and refreshed; unavailable official data is not replaced with calculated times.
 
-The **AL QURAN VERSE OF THE DAY** card displays original Arabic and Malay translation from [Mengaji.my](https://www.mengaji.my/api-docs/), whose translation is based on Tafsir Pimpinan Ar-Rahman by Sheikh Abdullah Basmeih. Arabic uses the official KFGQPC Hafs Uthmanic font, followed by a blank line and the Malay translation in Alexandria. The surah/ayah reference sits directly below the translation; the provider footer is hidden. Native auto-sizing preserves all wording without ellipsis or scrolling; very long verses use smaller text. The dock and app grid remain hidden.
+The **AL QURAN VERSE OF THE DAY** card displays original Arabic and Malay translation from [Mengaji.my](https://www.mengaji.my/api-docs/), whose translation is based on Tafsir Pimpinan Ar-Rahman by Sheikh Abdullah Basmeih. Arabic uses online Madani ayah artwork from the Islamic Network CDN, matched by surah and ayah, followed by the Malay translation in Alexandria. The surah/ayah reference sits directly below the translation; the provider footer is hidden. Native auto-sizing preserves all wording without ellipsis or scrolling; very long verses use smaller text. The dock and app grid remain hidden.
 
 The verse changes at Subuh, Zohor, Asar, Maghrib and Isyak using official JAKIM SGR01 times. It remains stable through Syuruk, midnight, reopening and app restarts within the same interval. An API request supplies each new verse; only the latest result is cached privately. A new interval requires Internet and a previous interval's verse is never silently substituted. This third-party Quran API is separate from JAKIM's prayer schedule. See [Quran verse details and checks](docs/prayer-quran-verse.md).
 
@@ -167,7 +167,8 @@ There is no external backend requirement or analytics integration. Network use d
 |---|---|
 | Weather | Open-Meteo, with configured city coordinates |
 | Official prayer schedule | JAKIM schedule provider |
-| Arabic Quran verse / Malay translation | `api.mengaji.my` |
+| Quran metadata / Malay translation | `api.mengaji.my` |
+| Madani Arabic ayah artwork | `cdn.islamic.network` |
 | Time-specific moon phase | `aa.usno.navy.mil` |
 | GO DAIKIN | Account authentication and device cloud API |
 | Tapo/Kasa | Discovery and control on the local network |

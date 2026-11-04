@@ -11,7 +11,7 @@ https://api.mengaji.my/v1/random` returns the verse, Arabic, Malay, surah name a
 reference together. If it repeats the previously shown ID, a single documented
 `GET /v1/ayat/{id}` for the following global verse prevents an immediate repeat.
 There is no retry loop, no bundled verse collection and no generated translation.
-The full API wording, punctuation and diacritics are preserved.
+The API wording is preserved. Literal backslashes escaping quotation marks are removed after JSON decoding; the quotation marks and words remain unchanged.
 
 ## Rotation and offline behavior
 
@@ -32,20 +32,30 @@ The full API wording, punctuation and diacritics are preserved.
 
 ## Layout and transport
 
-The current full-width card, dock visibility, prayer timeline and 6dp heading/content
-gap are retained. Heading and Malay text use Alexandria Regular. Arabic uses the
-official KFGQPC Hafs V3 Uthmanic font, with native bidirectional paragraph layout;
-Malay is not retranslated. A blank line separates Arabic and Malay, and the surah/ayah
-reference appears directly below the translation rather than in the bottom footer.
-Existing whole-content auto-sizing fits the full verse and translation without
-scrolling or ellipsis. Especially long verses consequently use smaller text. The
-provider footer is hidden. Attribution remains documented here and in the repository.
+The full-width card, prayer timeline and 6dp heading/content gap are retained.
+Heading and Malay text use Alexandria Regular. Arabic is fetched as pre-rendered
+Madani artwork using the exact surah and ayah from the text response:
+`https://cdn.islamic.network/quran/images/high-resolution/{surah}_{ayah}.png`.
+The format is documented by [AlQuran Cloud / Islamic Network](https://alquran.cloud/cdn).
+It avoids the incompatible Quran combining-mark mapping observed when the API's
+Unicode text was shaped using the bundled Hafs font. It is not a Quran.com API.
 
-The unmodified Unicode font comes from the [King Fahd Quran Printing Complex](https://fonts.qurancomplex.gov.sa/hafs-reading/),
-version 3.0. SHA-256: `c9dd7e71a454565b13d89e5e6f2663a918acb0a20a23eea31eccb32a3aeec47a`.
-Its embedded license grants free use, copying and distribution subject to its terms.
-The complete embedded license accompanies it in the APK at `assets/licenses/kfgqpc_hafs.txt`.
-Only a font is bundled; Quran verses and translations continue to come from the API.
+Only transparent margins are cropped. Gray edge coverage is preserved when tinting
+ink to the existing ivory color; diacritics and the verse-number ornament stay in
+the source artwork. The Arabic has its own size budget, independent of Malay
+text auto-sizing. Compact gaps and reclaimed bottom padding let the translation
+use more space. The reference remains below it. Long translations use smaller
+text to fit without scrolling or ellipsis. The provider footer stays hidden.
+
+Artwork loads off the main thread, only for the displayed verse, and only the
+latest image is held in memory. No Quran image collection is bundled or stored
+on disk. After an app restart, Arabic artwork requires Internet even if the
+current interval's text metadata remains cached. An artwork failure shows a clear
+unavailable message rather than falling back to the mismatched font. Retry is
+limited to once per minute while visible. The older Hafs font and its license
+remain in source for the existing text tests; active rendering uses CDN artwork.
+Image responses are limited to 2MiB and six million decoded pixels, with timeouts
+and redirects disabled. Provider availability is an external dependency.
 
 The client validates required fields and reference ranges, allows only the documented
 provider URLs, refuses redirects, limits responses to 128KiB and uses connection/read
@@ -79,3 +89,19 @@ for 1:1 and 2:282 fitting completely with the new font, spacing and inline refer
 The optimized APK was installed and its Prayer Time screen visually inspected. No
 crash entries were present for the running release process. The earlier Quran preview
 is preserved in `../backups/pre-quran-typography/`.
+
+## Madani artwork update — 4 November 2026
+
+Actual TV previews covered 37:116, 2:255, 112:1, 49:13, 13:28, 16:90 and
+31:17. The approved medium-long layout keeps the Arabic prominent and enlarges
+the Malay translation using the available lower space. Temporary verse overrides
+were removed; normal prayer-interval rotation is preserved.
+
+`MadaniArtworkChecks` covers exact artwork URLs, invalid references, transparent
+margin cropping, antialias coverage, quotation-escape cleanup, real HTTPS retrieval
+and short/long bilingual fitting, including 2:282. These checks validate transport
+and rendering; they are not an audit of the provider's full Quran corpus.
+
+Final validation: debug, instrumentation and optimized release builds succeeded;
+22 Madani artwork checks passed on the Sony TV, including live HTTPS and the
+quotation-escape fixture. No smart-home commands were sent.
