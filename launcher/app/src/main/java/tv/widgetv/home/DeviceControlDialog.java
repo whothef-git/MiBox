@@ -74,7 +74,7 @@ final class DeviceControlDialog extends Dialog {
         status.setText((repository.isDemo()?"DEMO MODE · In-memory controls":d.type==DeviceType.DAIKIN?"GO DAIKIN CLOUD":"LOCAL DEVICE")+" · "+d.connectionLabel()+(d.connection!=ConnectionState.ONLINE?" · Offline / unplugged":"")+(d.error.isEmpty()?"":"\n"+d.error));
         status.setTextColor(d.connection==ConnectionState.ONLINE?SmartHomeStyle.GREEN:SmartHomeStyle.AMBER);
         reading.setText(d.type==DeviceType.DAIKIN?(d.temperature>0?d.temperature+"°C":"—")+"  ·  "+d.mode+"  ·  Fan "+d.fanSpeed:
-            d.type==DeviceType.TAPO_P110?(repository.isDemo()?"Demo usage: ":"Last confirmed usage: ")+DeviceCardAdapter.reading(d.watts,0)+" W  ·  "+DeviceCardAdapter.reading(d.dailyKwh,2)+" kWh today":repository.isDemo()?"Three independent demo outlets":"Lampu Tidur · iPhone Charger · Laptop");
+            d.type==DeviceType.TAPO_P110?(repository.isDemo()?"Demo usage: ":"Last confirmed usage: ")+DeviceCardAdapter.reading(d.watts,0)+" W  ·  "+DeviceCardAdapter.reading(d.dailyKwh,2)+" kWh today":repository.isDemo()?"Three independent demo outlets":String.join(" · ",d.outletNames));
         for(Runnable update:updates)update.run();
         for(int i=0;i<buttons.size()-1;i++){boolean enabled=(d.type==DeviceType.DAIKIN?d.daikinWritable&&d.connection==ConnectionState.ONLINE:!d.pending&&d.connection==ConnectionState.ONLINE&&!d.disabled)&&(repository.isDemo()||d.type!=DeviceType.DAIKIN||d.daikinWritable);buttons.get(i).setClickable(enabled);buttons.get(i).setAlpha(enabled?1f:d.type==DeviceType.DAIKIN?.45f:d.pending?.5f:1f);}
     }

@@ -17,7 +17,7 @@ final class SmartDevice {
     String room="", ip="", hardwareId="", mac="", protocol="AUTO", error="";
     long lastSeen, optimisticUntil;
     final String[] outletIds={"","",""};
-    final String[] outletNames={"Lampu Tidur","iPhone Charger","Laptop"};
+    final String[] outletNames={"Laptop","iPhone Charger","Lampu Tidur"};
 
     SmartDevice(String id, DeviceType type, int order, String name) {
         this.id = id; this.type = type; this.order = order; this.name = name;
