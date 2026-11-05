@@ -89,13 +89,23 @@ final class PrayerVerse {
         net.execute(()->{
             Entry loaded=null;
             try {
-                loaded=parse(source.get(API+"random"));
-                // A random response may repeat (or be cached upstream). Guarantee a new verse
-                // with one bounded, documented lookup; never retry random requests in a loop.
-                if(loaded.id==previous) {
-                    int next=previous%6236+1;
-                    loaded=parse(source.get(API+"ayat/"+next));
-                    if(loaded.id!=next) throw new IOException("Quran API returned a mismatched verse");
+                // Prefer medium complete verses, with a strict four-request ceiling.
+                // Keep the best complete candidate if the provider cannot supply a preferred length.
+                for(int attempt=0;attempt<4;attempt++){
+                    Entry candidate;
+                    try{
+                        candidate=parse(source.get(API+"random"));
+                        if(candidate.id==previous){
+                            if(attempt==3)break;
+                            int next=previous%6236+1;
+                            candidate=parse(source.get(API+"ayat/"+next));
+                            if(candidate.id!=next)throw new IOException("Quran API returned a mismatched verse");
+                            if(loaded==null||lengthScore(candidate)<lengthScore(loaded))loaded=candidate;
+                            break; // Repeated upstream random result: do not keep requesting it.
+                        }
+                    }catch(Exception unavailable){if(loaded!=null)break;throw unavailable;}
+                    if(loaded==null||lengthScore(candidate)<lengthScore(loaded))loaded=candidate;
+                    if(preferred(candidate))break;
                 }
             } catch(Exception unavailable) { loaded=null; Log.w(Config.TAG,"quran: Arabic/Malay API unavailable",unavailable); }
             Entry result=loaded;
@@ -112,6 +122,10 @@ final class PrayerVerse {
         });
     }
 
+    static int words(String text){return text.trim().isEmpty()?0:text.trim().split("\\s+").length;}
+    static boolean preferred(Entry entry){int a=words(entry.arabic),m=words(entry.malay);return a>=14&&a<=35&&m>=25&&m<=65&&entry.malay.length()<=500;}
+    private static int lengthScore(Entry e){return Math.abs(words(e.arabic)-23)+Math.abs(words(e.malay)-43);}
+
     static Entry parse(String json) throws Exception {
         JSONObject root=new JSONObject(json);
         if(!root.getBoolean("success")) throw new IOException("Quran API reported an error");
@@ -122,7 +136,7 @@ final class PrayerVerse {
         String name=data.getString("nama_surah").trim(), arabic=data.getString("teks_arab").trim(), malay=data.getString("terjemahan_melayu").trim();
         // Some API strings contain a literal JSON quote escape after JSON decoding.
         while(malay.contains("\\\"")) malay=malay.replace("\\\"", "\"");
-        if(id<1 || id>6236 || surah<1 || surah>114 || ayah<1 || ayah>286 || name.isEmpty() || name.length()>120
+        if(!QuranReference.matches(id,surah,ayah) || name.isEmpty() || name.length()>120
                 || arabic.isEmpty() || malay.isEmpty() || "null".equalsIgnoreCase(malay) || arabic.length()>20000 || malay.length()>20000
                 || !java.util.regex.Pattern.compile("[\\u0600-\\u06FF]").matcher(arabic).find()
                 || arabic.contains("<") || malay.contains("<")) throw new IOException("Quran API text or reference missing/invalid");
@@ -136,7 +150,7 @@ final class PrayerVerse {
         try {
             connection.setConnectTimeout(8000); connection.setReadTimeout(12000); connection.setInstanceFollowRedirects(false);
             connection.setRequestProperty("Accept","application/json");
-            connection.setRequestProperty("User-Agent","Octahedron-TV/3.0 (Arabic and Malay verse reader)");
+            connection.setRequestProperty("User-Agent","Octahedron-TV/3.1 (Arabic and Malay verse reader)");
             if(connection.getResponseCode()!=200) throw new IOException("Quran API HTTP "+connection.getResponseCode());
             try(InputStream in=connection.getInputStream(); ByteArrayOutputStream out=new ByteArrayOutputStream()) {
                 byte[] buffer=new byte[4096]; int count;

@@ -1,14 +1,20 @@
-# Octahedron v3.0
+# Octahedron v3.1
 
 A calm, widget-first Android TV launcher with a living sky, local and world clocks, official JAKIM prayer times, Arabic Quran verses with Malay translation, expanded weather forecasts and integrated smart-home controls. Built on WidgeTV and customized for Sony BRAVIA.
 
 Use the TV remote to move between **Home**, **Prayer Time**, **Weather** and **Smart Home**. Screen-tab navigation wraps from the last tab to the first and back.
 
-**Current version:** v3.0 (`versionCode 13`). Updated 4 November 2026 with Home rain, wet app tiles and the lower dock, alongside the NASA lunar-surface, Weather and gold tab-focus updates.
+**Current version:** v3.1 (`versionCode 14`). Adds medium-length ayah preference, a private current-artwork cache, a gentle verse fade, a 14sp preferred Malay translation size and stronger reference validation. Stable v3.0 remains the rollback build.
 
 *All four previews below are short animated GIFs recorded directly on Sony BRAVIA on 1 November 2026 from the installed, optimized build matching that source. The 1920 × 1080 recordings are encoded at 960 × 540 and 15fps for the README. Clocks, Quran content, forecasts and device states reflect capture time; no device control commands were sent. These captures predate the NASA lunar-surface, lower dock and Home rain/wet-tile updates. Original-resolution stills and recording details are available in [capture details](docs/screenshots/README.md).*
 
-## What's new in v3
+## What's new in v3.1
+
+- **More readable Quran card:** bounded medium-length selection, 14sp preferred translation with fit fallback, and one 220ms fade when the displayed prayer interval changes.
+- **Offline current artwork:** one replaceable image in Android private cache, reloaded after app restart; Clear cache removes it safely. No Quran collection is bundled.
+- **Reference consistency:** global verse ID is checked against all 114 chapter lengths before pairing Arabic artwork and Malay translation. This validates references, not the correctness of the provider's text.
+
+## Existing v3 features
 
 - **Living sky:** a subtle clear-sky tint, translucent sun and moon, a soft sun halo and horizon fades over the original geometric wallpaper. Time-specific moon illumination and waxing/waning orientation come from USNO, refreshed every fifteen minutes while visible.
 - **Textured sun and moon:** a spherical Moon rendered from NASA LROC color and LOLA terrain data, plus decorative sun artwork at 50% opacity, a restrained 15% sky tint, and a small moon-phase label. The Moon uses a 4K source map and cached 384px rendering at its existing 90px display size, with no exterior glow. It is hidden when valid current phase data is unavailable.

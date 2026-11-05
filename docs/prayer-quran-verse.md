@@ -105,3 +105,41 @@ and rendering; they are not an audit of the provider's full Quran corpus.
 Final validation: debug, instrumentation and optimized release builds succeeded;
 22 Madani artwork checks passed on the Sony TV, including live HTTPS and the
 quotation-escape fixture. No smart-home commands were sent.
+
+## v3.1 — approved release
+
+Selection now tries at most four text API requests per interval and prefers complete
+verses with 14–35 Arabic words and 25–65 Malay words (at most 500 Malay characters).
+If candidates do not meet those targets, the closest complete candidate is retained;
+text is never truncated or paraphrased. Cached upstream repeats use one bounded
+next-ID lookup within the same request budget. This is a reading-length heuristic,
+not theological curation or a guarantee of identical layout for every verse.
+
+The translation prefers 14sp (plus the existing text-size preference), shrinking
+only as needed to fit. Arabic keeps its independent size budget. A single 220ms
+fade-in occurs for newly displayed prayer-interval content, not every clock tick.
+
+Current raw PNG artwork is atomically replaced in one app-private Android cache
+entry, checked by exact reference and CRC before decoding. The PNG limit is 2MiB
+plus a small reference/checksum header. Atomic replacement can temporarily retain
+both old and new files. The OS or Clear cache may remove it; Clear data resets
+settings and credentials as before. No network is required to load a valid cached
+image after app restart in the same prayer interval. A different interval still
+needs fresh text; an older interval is never relabeled as current.
+
+Reference validation uses only chapter lengths from the Islamic Network metadata
+endpoint `https://api.alquran.cloud/v1/surah` (114 entries totaling 6236 verses).
+These numbers are not a bundled verse collection and add no runtime API dependency.
+They verify global ID / chapter / ayah consistency; they cannot independently
+verify the provider's translation or the visual image content.
+
+The preceding memory-only/offline behavior describes v3.0. v3.1 replaces that
+behavior with the single-image cache described here. GitHub publication and final
+TV installation were approved after the temporary TV test and v3.0 rollback.
+
+Local v3.1 validation on 5 November 2026: builds passed; 34 artwork/cache checks
+and 38 prayer-provider checks passed on Sony Android TV. Actual 39:63 layout and
+restart were inspected, and a focused fade was recorded. Offline retrieval used
+a failing network test source. Original v3.0 was restored after testing without
+clearing data. APK size increased from 7,362,290 to 7,364,706 bytes (+2,416).
+The user subsequently approved the release branch, GitHub publication and final installation.

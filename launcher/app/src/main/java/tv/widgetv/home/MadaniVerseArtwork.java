@@ -25,6 +25,11 @@ import java.util.concurrent.Executors;
 
 /** Online, pre-rendered ayah artwork. Holds only the most recently requested verse in memory. */
 final class MadaniVerseArtwork {
+    interface Source { byte[] get(int surah,int ayah)throws Exception; }
+    private final AyahArtworkCache disk;
+    private final Source source;
+    MadaniVerseArtwork(android.content.Context context){this(context.getCacheDir(),MadaniVerseArtwork::downloadBytes);}
+    MadaniVerseArtwork(java.io.File directory,Source source){disk=new AyahArtworkCache(directory);this.source=source;}
     private final ExecutorService worker=Executors.newSingleThreadExecutor();
     private final Handler main=new Handler(Looper.getMainLooper());
     private String imageKey="",attemptedKey="";
@@ -40,7 +45,12 @@ final class MadaniVerseArtwork {
         loading=true;failed=false;attemptedKey=requested;attemptedAt=now;
         worker.execute(()->{
             Bitmap result=null;
-            try{result=download(entry.surah,entry.ayah);}catch(Exception unavailable){android.util.Log.w(Config.TAG,"quran: Madani artwork unavailable ("+unavailable.getClass().getSimpleName()+")");}
+            try{
+                byte[] cached=disk.read(requested);
+                if(cached!=null)try{result=decode(cached);}catch(Exception corrupt){/* Refresh invalid cached PNG. */}
+                if(result==null){byte[] bytes=source.get(entry.surah,entry.ayah);result=decode(bytes);
+                    try{disk.write(requested,bytes);}catch(IOException cacheUnavailable){/* Online rendering still works. */}}
+            }catch(Exception unavailable){android.util.Log.w(Config.TAG,"quran: Madani artwork unavailable ("+unavailable.getClass().getSimpleName()+")");}
             Bitmap loaded=result;
             main.post(()->{
                 if(closed){if(loaded!=null)loaded.recycle();return;}
@@ -51,15 +61,16 @@ final class MadaniVerseArtwork {
         });
     }
     static String url(int surah,int ayah){
-        if(surah<1||surah>114||ayah<1||ayah>286)throw new IllegalArgumentException("Invalid ayah reference");
+        QuranReference.globalId(surah,ayah);
         return "https://cdn.islamic.network/quran/images/high-resolution/"+surah+"_"+ayah+".png";
     }
-    static Bitmap download(int surah,int ayah)throws Exception{
+    static Bitmap download(int surah,int ayah)throws Exception{return decode(downloadBytes(surah,ayah));}
+    static byte[] downloadBytes(int surah,int ayah)throws Exception{
         HttpURLConnection conn=(HttpURLConnection)new URL(url(surah,ayah)).openConnection();
         byte[] bytes;
         try{
             conn.setConnectTimeout(8000);conn.setReadTimeout(12000);conn.setInstanceFollowRedirects(false);
-            conn.setRequestProperty("Accept","image/png");conn.setRequestProperty("User-Agent","Octahedron-TV/3.0");
+            conn.setRequestProperty("Accept","image/png");conn.setRequestProperty("User-Agent","Octahedron-TV/3.1");
             if(conn.getResponseCode()!=200)throw new IOException("Ayah artwork HTTP "+conn.getResponseCode());
             try(InputStream in=conn.getInputStream();ByteArrayOutputStream out=new ByteArrayOutputStream()){
                 byte[] buffer=new byte[8192];int count;
@@ -67,6 +78,10 @@ final class MadaniVerseArtwork {
                 bytes=out.toByteArray();
             }
         }finally{conn.disconnect();}
+        return bytes;
+    }
+    static Bitmap decode(byte[] bytes)throws IOException{
+        if(bytes.length<1||bytes.length>AyahArtworkCache.LIMIT)throw new IOException("Invalid artwork size");
         BitmapFactory.Options options=new BitmapFactory.Options();options.inJustDecodeBounds=true;
         BitmapFactory.decodeByteArray(bytes,0,bytes.length,options);
         if(options.outWidth<1||options.outHeight<1||options.outWidth>4096||options.outHeight>16384

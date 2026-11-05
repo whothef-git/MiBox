@@ -33,18 +33,43 @@ public final class MadaniArtworkChecks extends Instrumentation {
             org.json.JSONObject escaped=new org.json.JSONObject().put("id",1).put("surah_id",1).put("nombor_ayat",1).put("nama_surah","Fixture").put("teks_arab","بِ").put("terjemahan_melayu",String.valueOf((char)92)+(char)34+"Teks.");
             PrayerVerse.Entry cleaned=PrayerVerse.parse(new org.json.JSONObject().put("success",true).put("data",escaped).toString());
             check(cleaned.malay.equals(String.valueOf((char)34)+"Teks."),"literal quote escape removed without changing words or quotation mark");
+            check(QuranReference.matches(3904,37,116)&&QuranReference.matches(6236,114,6),"global references cross-checked against chapter lengths");
+            check(!QuranReference.matches(3903,37,116)&&!QuranReference.matches(1,114,7),"mismatched global IDs and chapter boundaries rejected");
+            org.json.JSONObject wrong=new org.json.JSONObject(escaped.toString()).put("surah_id",37).put("nombor_ayat",116);
+            boolean mismatched=false;try{PrayerVerse.parse(new org.json.JSONObject().put("success",true).put("data",wrong).toString());}catch(Exception expected){mismatched=true;}
+            check(mismatched,"API reference mismatch rejected before image pairing");
+            java.io.File folder=new java.io.File(getTargetContext().getCacheDir(),"ayah-test-"+System.nanoTime());folder.mkdirs();
+            try{
+                AyahArtworkCache cache=new AyahArtworkCache(folder);byte[] raw=MadaniVerseArtwork.downloadBytes(37,116);
+                cache.write("37:116",raw);
+                check(java.util.Arrays.equals(raw,new AyahArtworkCache(folder).read("37:116")),"private artwork survives repository restart");
+                check(cache.read("16:90")==null,"different reference never reuses cached artwork");
+                java.util.concurrent.CountDownLatch offlineDone=new java.util.concurrent.CountDownLatch(1);
+                java.util.concurrent.atomic.AtomicReference<MadaniVerseArtwork> offline=new java.util.concurrent.atomic.AtomicReference<>();
+                PrayerVerse.Entry ref=new PrayerVerse.Entry(3904,37,116,"As-Saffat","بِ","Fixture");
+                runOnMainSync(()->{MadaniVerseArtwork provider=new MadaniVerseArtwork(folder,(surah,ayah)->{throw new java.io.IOException("offline test");});offline.set(provider);provider.maybeFetch(ref,offlineDone::countDown);});
+                check(offlineDone.await(10,java.util.concurrent.TimeUnit.SECONDS),"offline cache load completes asynchronously");
+                runOnMainSync(()->{check(offline.get().get(ref)!=null,"cached artwork renders without network after restart");offline.get().shutdown();});
+                cache.write("16:90",raw);check(cache.read("37:116")==null&&folder.list().length==1,"one current artwork replaces previous cache entry");
+                java.io.File file=new java.io.File(folder,"quran-current.art");try(java.io.RandomAccessFile corrupt=new java.io.RandomAccessFile(file,"rw")){corrupt.seek(corrupt.length()-1);corrupt.write(99);}
+                check(cache.read("16:90")==null,"corrupt cache rejected");
+                for(java.io.File f:folder.listFiles())f.delete();check(cache.read("16:90")==null,"cleared cache safely becomes a cache miss");
+            }finally{for(java.io.File f:folder.listFiles())f.delete();folder.delete();}
             PrayerVerse.Entry shortVerse=PrayerVerse.parse(PrayerVerse.download(PrayerVerse.API+"ayat/3904"));
             check(shortVerse.surah==37&&shortVerse.ayah==116,"reference under review loaded from the live text API");
             Bitmap shortImage=MadaniVerseArtwork.download(37,116);
             check(shortImage.getWidth()==554&&shortImage.getHeight()==84,"real Madani artwork trims page margins while preserving the complete verse and ornament");
             PrayerVerse.Entry longVerse=PrayerVerse.parse(PrayerVerse.download(PrayerVerse.API+"ayat/289"));
+            check(!PrayerVerse.preferred(shortVerse)&&!PrayerVerse.preferred(longVerse),"very short and very long verses are not preferred");
+            PrayerVerse.Entry medium=PrayerVerse.parse(PrayerVerse.download(PrayerVerse.API+"ayat/1991"));
+            check(PrayerVerse.preferred(medium),"approved medium-long 16:90 qualifies without truncation");
             Bitmap longImage=MadaniVerseArtwork.download(longVerse.surah,longVerse.ayah);
             check(longVerse.surah==2&&longVerse.ayah==282&&longImage.getWidth()>0,"longest verse artwork loads over TV HTTPS");
             java.util.concurrent.atomic.AtomicReference<Throwable> failure=new java.util.concurrent.atomic.AtomicReference<>();
             runOnMainSync(()->{try{
                 TextView text=new TextView(getTargetContext());text.setLayoutParams(new android.view.ViewGroup.LayoutParams(1600,290));text.setTypeface(getTargetContext().getResources().getFont(R.font.alexandria));
-                text.setAutoSizeTextTypeUniformWithConfiguration(1,16,1,android.util.TypedValue.COMPLEX_UNIT_SP);
-                text.setGravity(android.view.Gravity.TOP|android.view.Gravity.CENTER_HORIZONTAL);text.setTextDirection(View.TEXT_DIRECTION_FIRST_STRONG);text.setLineSpacing(0,1.12f);
+                text.setAutoSizeTextTypeUniformWithConfiguration(1,14,1,android.util.TypedValue.COMPLEX_UNIT_SP);
+                text.setGravity(android.view.Gravity.TOP|android.view.Gravity.CENTER_HORIZONTAL);text.setTextDirection(View.TEXT_DIRECTION_FIRST_STRONG);text.setLineSpacing(0,1.05f);
                 PrayerVerse.Entry[] entries={shortVerse,longVerse};Bitmap[] images={shortImage,longImage};
                 for(int i=0;i<2;i++){
                     CharSequence content=MadaniVerseArtwork.display(entries[i],images[i],1600);Spanned spans=(Spanned)content;
