@@ -1,5 +1,11 @@
 # Octahedron v3.1
 
+## MiBox edition
+
+This repository uses Outfit clocks, the fixed hex-girih wallpaper from the Home preview, and the preview's 22dp dock bottom margin. The Mi Box is configured for 24-hour time. Sky colors, sun position and weather remain live, so a morning screen differs from the evening preview. Only installed apps appear in the dock.
+
+The original Sony previews below are retained as the design reference.
+
 A calm, widget-first Android TV launcher with a living sky, local and world clocks, official JAKIM prayer times, Arabic Quran verses with Malay translation, expanded weather forecasts and integrated smart-home controls. Built on WidgeTV and customized for Sony BRAVIA.
 
 Use the TV remote to move between **Home**, **Prayer Time**, **Weather** and **Smart Home**. Screen-tab navigation wraps from the last tab to the first and back.

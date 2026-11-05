@@ -107,14 +107,14 @@
 
     <!-- Wallpaper geometry: zellige (the same pattern every day) or rotate (8-point star, hex girih,
          interlaced circles and zellige, one per day). -->
-    <string name="pattern_mode" translatable="false">rotate</string>
+    <string name="pattern_mode" translatable="false">hex-girih</string>
 
     <!-- Thought of the day between the timeline and the dock (content/thoughts.json). -->
     <bool name="thoughts_enabled">true</bool>
 
     <!-- Starting values for two rows of the on-TV Prayer settings panel; the panel can change them.
-         clock_font: cormorant (elegant serif, default) or outfit (thin geometric sans).
+         clock_font: cormorant (elegant serif) or outfit (thin geometric sans, default).
          text_size: normal, large or larger (scales everything except the big clock and the dock). -->
-    <string name="clock_font" translatable="false">cormorant</string>
+    <string name="clock_font" translatable="false">outfit</string>
     <string name="text_size" translatable="false">normal</string>
 </resources>

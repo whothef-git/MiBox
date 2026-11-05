@@ -51,6 +51,7 @@ public final class SkyView extends View {
     private int patternIndex = -1;
     private Bitmap tile;
     private boolean rotate;
+    private int fixedPattern;
     private final LivingSky living;
     private final MoonCalendar moonCalendar;
     private PrayerDay currentDay;
@@ -68,6 +69,8 @@ public final class SkyView extends View {
         living=new LivingSky(c);
         moonCalendar=new MoonCalendar(c);
         rotate = "rotate".equals(c.getString(R.string.pattern_mode));
+        fixedPattern = "hex-girih".equals(c.getString(R.string.pattern_mode))
+                ? Patterns.HEX_GIRIH : Patterns.ZELLIGE;
         Random r = new Random(1448);
         for (int i = 0; i < 40; i++) {
             starXY[i * 3] = r.nextFloat();
@@ -104,7 +107,7 @@ public final class SkyView extends View {
         for (int i = 0; i < 3; i++) next[i] = lerpColor(SKY[prev][i], SKY[period][i], t);
         nightWeight = (period == NIGHT ? t : 0f) + (prev == NIGHT && period != NIGHT ? 1f - t : 0f);
 
-        int p = forcedPattern >= 0 ? forcedPattern : rotate ? dayOfYear() % 4 : Patterns.ZELLIGE;
+        int p = forcedPattern >= 0 ? forcedPattern : rotate ? dayOfYear() % 4 : fixedPattern;
         boolean changed = !java.util.Arrays.equals(next, colors) || p != patternIndex;
         colors = next;
         if (p != patternIndex || tile == null) {
