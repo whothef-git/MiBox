@@ -120,6 +120,7 @@ public class MainActivity extends Activity {
     private PrayerVerse verses;
     private MadaniVerseArtwork verseArtwork;
     private long shownVerseSlot = -1;
+    private long fadedVerseSlot = -1;
     private View hereWeather, thought;
     private ImageView awayFlag;
     private TextView hereTemp, awayTemp, awayRange, thoughtTag, thoughtText, thoughtSource;
@@ -153,7 +154,7 @@ public class MainActivity extends Activity {
         thoughtText = findViewById(R.id.thought_text);
         thoughtSource = findViewById(R.id.thought_source);
         verses = new PrayerVerse(this);
-        verseArtwork = new MadaniVerseArtwork();
+        verseArtwork = new MadaniVerseArtwork(this);
         thoughtText.addOnLayoutChangeListener((view,left,top,right,bottom,oldLeft,oldTop,oldRight,oldBottom)->{
             if((right-left!=oldRight-oldLeft||bottom-top!=oldBottom-oldTop)&&tabIdx==1){shownVerseSlot=-1;renderVerse();}
         });
@@ -920,7 +921,7 @@ public class MainActivity extends Activity {
         thoughtText.setFontVariationSettings("'wght' 400");
         thoughtSource.setFontVariationSettings("'wght' 400");
         quranFont = getResources().getFont(R.font.uthmanic_hafs);
-        thoughtText.setAutoSizeTextTypeUniformWithConfiguration(1, 16 + l, 1, TypedValue.COMPLEX_UNIT_SP);
+        thoughtText.setAutoSizeTextTypeUniformWithConfiguration(1, 14 + l, 1, TypedValue.COMPLEX_UNIT_SP);
         thoughtSource.setTextSize(TypedValue.COMPLEX_UNIT_SP, 9 + l);
         if (day != null) renderDateAndWeather();
     }
@@ -1065,6 +1066,10 @@ public class MainActivity extends Activity {
                 thoughtText.setText(MadaniVerseArtwork.display(entry,artwork,contentWidth,contentHeight));
                 thoughtText.setContentDescription(entry.arabic+"\n"+entry.malay+"\n"+entry.reference());
                 shownVerseSlot = slot;
+                if(fadedVerseSlot!=slot){
+                    thoughtText.animate().cancel();thoughtText.setAlpha(0f);
+                    thoughtText.animate().alpha(1f).setDuration(220).start();fadedVerseSlot=slot;
+                }
             }
         } else {
             shownVerseSlot = -1;

@@ -21,8 +21,8 @@ public final class PrayerVerseChecks extends Instrumentation {
     private void check(boolean value,String why) { if(!value)throw new AssertionError(why); checks++; }
     private String fixture(int id) throws Exception {
         JSONObject verse=new JSONObject().put("id",id).put("surah_id",1).put("nombor_ayat",id)
-                .put("nama_surah","Parser fixture").put("teks_arab","\u0628\u0650 \u062a\u064e")
-                .put("terjemahan_melayu","Teks ujian. Kekalkan tanda baca: ‘ ’.");
+                .put("nama_surah","Parser fixture").put("teks_arab",String.join(" ",java.util.Collections.nCopies(18,"\u0628\u0650")))
+                .put("terjemahan_melayu",String.join(" ",java.util.Collections.nCopies(5,"Teks ujian. Kekalkan tanda baca: ‘ ’.")));
         return new JSONObject().put("success",true).put("data",verse).toString();
     }
     private void fetch(PrayerVerse provider,long slot) throws Exception {
@@ -55,6 +55,17 @@ public final class PrayerVerseChecks extends Instrumentation {
             for(String bad:new String[]{"{}","{\"success\":false}",fixture(1).replace("terjemahan_melayu","wrong"),fixture(1).replace("teks_arab","wrong")}) {
                 boolean rejected=false;try{PrayerVerse.parse(bad);}catch(Exception expected){rejected=true;}check(rejected,"invalid API data rejected");
             }
+            AtomicInteger selectionCalls=new AtomicInteger();
+            PrayerVerse selector=new PrayerVerse(context,url->{
+                int id=selectionCalls.incrementAndGet()==1?4:5;
+                JSONObject json=new JSONObject(fixture(id));
+                if(id==4)json.getJSONObject("data").put("teks_arab","بِ").put("terjemahan_melayu","Teks.");
+                return json.toString();
+            });
+            try{fetch(selector,times[0]-1000);check(selectionCalls.get()==2&&selector.get(times[0]-1000).id==5,"short verse skipped in favor of complete medium candidate");}finally{selector.shutdown();}
+            selectionCalls.set(0);
+            PrayerVerse bounded=new PrayerVerse(context,url->{selectionCalls.incrementAndGet();JSONObject json=new JSONObject(fixture(4));json.getJSONObject("data").put("teks_arab","بِ").put("terjemahan_melayu","Teks.");return json.toString();});
+            try{fetch(bounded,times[0]-500);check(selectionCalls.get()==4&&bounded.get(times[0]-500).id==4,"selection stops after four requests and keeps complete fallback");}finally{bounded.shutdown();}
             AtomicInteger requests=new AtomicInteger();
             provider=new PrayerVerse(context,url->{requests.incrementAndGet();return fixture(url.endsWith("ayat/2")?2:1);});
             fetch(provider,times[0]);check(provider.get(times[0])!=null,"first prayer verse cached");
